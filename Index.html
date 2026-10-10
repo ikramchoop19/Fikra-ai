@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fikra AI | فكرتك تبدأ هنا</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0913;
+      color: white;
+    }
+    header {
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #29213b;
+    }
+    .logo { color: #bb86fc; font-size: 30px; font-weight: bold; }
+    .hero { text-align: center; padding: 35px 15px 20px; }
+    h1 { font-size: 32px; margin-bottom: 10px; }
+    .purple { color: #bb86fc; }
+    .container { max-width: 800px; margin: auto; padding: 15px; }
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    button, select, textarea, input {
+      font: inherit;
+      border-radius: 12px;
+    }
+    .tool {
+      padding: 18px 8px;
+      background: #171323;
+      color: white;
+      border: 1px solid #35264e;
+      cursor: pointer;
+    }
+    .tool.active { border: 2px solid #bb86fc; background: #241735; }
+    .panel {
+      background: #171323;
+      border: 1px solid #35264e;
+      padding: 18px;
+      border-radius: 18px;
+    }
+    label { display: block; margin: 12px 0 8px; }
+    textarea, input, select {
+      width: 100%;
+      padding: 13px;
+      background: #0b0913;
+      border: 1px solid #49365f;
+      color: white;
+      outline: none;
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    .main-btn {
+      width: 100%;
+      margin-top: 14px;
+      padding: 14px;
+      border: 0;
+      background: #9b5de5;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    #result {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      line-height: 1.8;
+      margin-top: 18px;
+    }
+    footer { text-align: center; color: #a9a1b8; padding: 25px; }
+    @media(max-width: 480px) {
+      h1 { font-size: 26px; }
+      .tool { font-size: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">✦ Fikra AI</div>
+    <p>ذكاء اصطناعي يساعدك على الإبداع</p>
+  </header>
+
+  <section class="hero">
+    <h1>حوّل فكرتك إلى <span class="purple">إنجاز</span></h1>
+    <p>اكتب، ابتكر، خطّط، ودع الذكاء الاصطناعي يساعدك.</p>
+  </section>
+
+  <main class="container">
+    <label for="language">اللغة / Language / Langue</label>
+    <select id="language">
+      <option value="Arabic">العربية</option>
+      <option value="French">Français</option>
+      <option value="English">English</option>
+    </select>
+
+    <div class="tools">
+      <button class="tool active" data-type="chat">💬 محادثة AI</button>
+      <button class="tool" data-type="ad">📢 كتابة إعلان</button>
+      <button class="tool" data-type="image">🎨 أفكار الصور</button>
+      <button class="tool" data-type="video">🎬 تخطيط فيديو</button>
+    </div>
+
+    <section class="panel">
+      <label id="promptLabel" for="prompt">ما الذي تريد أن أساعدك فيه؟</label>
+      <textarea id="prompt" placeholder="اكتب فكرتك هنا..."></textarea>
+      <button class="main-btn" id="generate">✨ ابدأ الآن</button>
+      <div id="result" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <footer>Fikra AI © 2026 — أفكارك تستحق أن ترى النور</footer>
+
+  <script>
+    let currentType = "chat";
+    const promptBox = document.getElementById("prompt");
+    const resultBox = document.getElementById("result");
+    const generateBtn = document.getElementById("generate");
+
+    document.querySelectorAll(".tool").forEach(button => {
+      button.addEventListener("click", () => {
+        document.querySelectorAll(".tool").forEach(b => b.classList.remove("active"));
+        button.classList.add("active");
+        currentType = button.dataset.type;
+
+        const labels = {
+          chat: "ما الذي تريد أن أساعدك فيه؟",
+          ad: "صف منتجك لنكتب إعلانًا جذابًا",
+          image: "صف الصورة التي تريد إنشاء وصف لها",
+          video: "ما موضوع الفيديو الذي تريد التخطيط له؟"
+        };
+        document.getElementById("promptLabel").textContent = labels[currentType];
+        resultBox.textContent = "";
+      });
+    });
+
+    generateBtn.addEventListener("click", async () => {
+      const prompt = promptBox.value.trim();
+      if (!prompt) {
+        resultBox.textContent = "اكتب طلبك أولًا.";
+        return;
+      }
+
+      generateBtn.disabled = true;
+      resultBox.textContent = "⏳ جارٍ تجهيز الإجابة...";
+
+      try {
+        const response = await fetch("/tool", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: currentType,
+            prompt,
+            language: document.getElementById("language").value
+          })
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "حدث خطأ في الطلب.");
+        resultBox.textContent = data.answer || data.response || "لم تصل إجابة.";
+      } catch (error) {
+        resultBox.textContent =
+          "تعذر الاتصال بالخدمة. تأكد من نشر واجهة الموقع وربطها بخدمة Fikra AI. التفاصيل: " + error.message;
+      } finally {
+        generateBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
